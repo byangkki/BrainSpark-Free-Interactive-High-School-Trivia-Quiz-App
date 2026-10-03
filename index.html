@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BrainSpark – High School Trivia Quiz</title>
+
+  <!-- MathJax for rendering high school math formulas nicely -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.9);
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-gold: #f59e0b;
+      --text-light: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* HEADER */
+    .header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 0.5px;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    /* SCREEN 1: CATEGORY SELECTION */
+    .screen {
+      display: none;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    .category-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .btn-cat {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem;
+      color: var(--text-light);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+    }
+
+    .btn-cat:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .btn-cat span.icon {
+      font-size: 1.4rem;
+    }
+
+    /* SCREEN 2: QUIZ SCREEN */
+    .quiz-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .score-badge {
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--accent-blue);
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    /* TIMER BAR */
+    .timer-container {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+    }
+
+    .timer-bar {
+      height: 100%;
+      width: 100%;
+      background: var(--accent-green);
+      transition: width 1s linear, background-color 0.3s;
+    }
+
+    .question-box {
+      font-size: 1.1rem;
+      font-weight: 700;
+      line-height: 1.4;
+      margin-bottom: 1.25rem;
+      min-height: 60px;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    .option-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      color: var(--text-light);
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .option-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .option-btn.correct {
+      background: rgba(16, 185, 129, 0.25) !important;
+      border-color: var(--accent-green) !important;
+      color: #34d399 !important;
+    }
+
+    .option-btn.wrong {
+      background: rgba(239, 68, 68, 0.25) !important;
+      border-color: var(--accent-red) !important;
+      color: #f87171 !important;
+    }
+
+    .option-btn.disabled {
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .option-prefix {
+      width: 26px;
+      height: 26px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    /* EXPLANATION BOX */
+    .explanation-card {
+      display: none;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+
+    .explanation-title {
+      font-weight: 700;
+      color: var(--accent-gold);
+      margin-bottom: 0.3rem;
+    }
+
+    .btn-next {
+      display: none;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 0.85rem;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 1rem;
+      text-align: center;
+      transition: transform 0.2s;
+    }
+
+    .btn-next:hover {
+      transform: translateY(-2px);
+    }
+
+    /* SCREEN 3: RESULTS */
+    .result-card {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 0;
+    }
+
+    .score-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, rgba(15, 23, 42, 0.5) 100%);
+      border: 3px solid var(--accent-purple);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .score-num {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--accent-gold);
+    }
+
+    .score-total {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .result-msg {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .btn-restart {
+      background: var(--accent-blue);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 0.85rem 1.8rem;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .btn-restart:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <div class="title">BrainSpark</div>
+      <div class="subtitle">High School Trivia Quiz App</div>
+    </div>
+
+    <!-- SCREEN 1: CATEGORY SELECTION -->
+    <div id="screen-category" class="screen active">
+      <div style="font-weight: 600; font-size: 0.95rem; text-align: center; color: var(--text-muted);">
+        Select a subject to begin:
+      </div>
+      <div class="category-grid">
+        <button class="btn-cat" onclick="startQuiz('science')">
+          <span>General Science</span>
+          <span class="icon">🧪</span>
+        </button>
+        <button class="btn-cat" onclick="startQuiz('history')">
+          <span>Philippine History</span>
+          <span class="icon">📜</span>
+        </button>
+        <button class="btn-cat" onclick="startQuiz('math')">
+          <span>Mathematics</span>
+          <span class="icon">📐</span>
+        </button>
+        <button class="btn-cat" onclick="startQuiz('general')">
+          <span>General Knowledge</span>
+          <span class="icon">💡</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: QUIZ INTERFACE -->
+    <div id="screen-quiz" class="screen">
+      <div class="quiz-info">
+        <span id="question-progress">Question 1/5</span>
+        <span class="score-badge" id="score-display">Score: 0</span>
+      </div>
+
+      <div class="timer-container">
+        <div id="timer-bar" class="timer-bar"></div>
+      </div>
+
+      <div id="question-text" class="question-box"></div>
+
+      <div id="options-container" class="options-grid"></div>
+
+      <div id="explanation-box" class="explanation-card">
+        <div class="explanation-title">Explanation:</div>
+        <div id="explanation-text"></div>
+      </div>
+
+      <button id="btn-next" class="btn-next" onclick="nextQuestion()">Next Question ➔</button>
+    </div>
+
+    <!-- SCREEN 3: FINAL RESULTS -->
+    <div id="screen-results" class="screen">
+      <div class="result-card">
+        <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-muted);">Quiz Completed!</div>
+        <div class="score-circle">
+          <div id="final-score" class="score-num">0</div>
+          <div id="final-total" class="score-total">out of 5</div>
+        </div>
+        <div id="result-message" class="result-msg">Great Job!</div>
+        <button class="btn-restart" onclick="showCategories()">Choose Another Subject</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- QUIZ DATA ---
+    const quizData = {
+      science: [
+        {
+          q: "What organelle is known as the 'powerhouse of the cell'?",
+          options: ["Ribosome", "Mitochondria", "Nucleus", "Golgi Body"],
+          answer: 1,
+          exp: "Mitochondria generate most of the chemical energy needed to power the cell's biochemical reactions (ATP)."
+        },
+        {
+          q: "What is the acceleration due to gravity on Earth's surface (approximate)?",
+          options: ["9.8 m/s²", "5.2 m/s²", "12.4 m/s²", "1.6 m/s²"],
+          answer: 0,
+          exp: "Standard gravity on Earth is approximately 9.8 m/s²."
+        },
+        {
+          q: "Which element has the chemical symbol 'Na'?",
+          options: ["Nickel", "Nitrogen", "Sodium", "Silver"],
+          answer: 2,
+          exp: "Na comes from the Latin word 'Natrium', which stands for Sodium."
+        },
+        {
+          q: "What is the main gas found in Earth's atmosphere?",
+          options: ["Oxygen", "Carbon Dioxide", "Nitrogen", "Hydrogen"],
+          answer: 2,
+          exp: "Nitrogen makes up approximately 78% of Earth's atmosphere."
+        },
+        {
+          q: "Which law states that for every action, there is an equal and opposite reaction?",
+          options: ["Newton's 1st Law", "Newton's 2nd Law", "Newton's 3rd Law", "Law of Gravity"],
+          answer: 2,
+          exp: "Newton's Third Law of Motion states that action and reaction forces are equal in magnitude and opposite in direction."
+        }
+      ],
+      history: [
+        {
+          q: "Where was the proclamation of Philippine Independence held on June 12, 1898?",
+          options: ["Kawit, Cavite", "Malolos, Bulacan", "Calamba, Laguna", "Intramuros, Manila"],
+          answer: 0,
+          exp: "General Emilio Aguinaldo proclaimed Philippine Independence at his home in Kawit, Cavite."
+        },
+        {
+          q: "Who is considered the 'Father of the Katipunan'?",
+          options: ["Jose Rizal", "Andres Bonifacio", "Apolinario Mabini", "Emilio Jacinto"],
+          answer: 1,
+          exp: "Andres Bonifacio founded and led the KKK (Katipunan) in 1892."
+        },
+        {
+          q: "What was the title of Jose Rizal's first published novel?",
+          options: ["El Filibusterismo", "Noli Me Tángere", "Mi Último Adiós", "La Solidaridad"],
+          answer: 1,
+          exp: "Noli Me Tángere ('Touch Me Not') was published in Berlin in 1887."
+        },
+        {
+          q: "Who was the sublime paralytic and 'Brain of the Revolution'?",
+          options: ["Apolinario Mabini", "Antonio Luna", "Emilio Jacinto", "Marcelo H. del Pilar"],
+          answer: 0,
+          exp: "Apolinario Mabini served as chief advisor to General Emilio Aguinaldo despite his paralysis."
+        },
+        {
+          q: "In what year did Ferdinand Magellan arrive in the Philippines?",
+          options: ["1492", "1521", "1565", "1898"],
+          answer: 1,
+          exp: "Magellan arrived in Homonhon, Eastern Samar on March 16, 1521."
+        }
+      ],
+      math: [
+        {
+          q: "Solve for x: \\( 2x + 5 = 15 \\)",
+          options: ["x = 3", "x = 5", "x = 10", "x = 4"],
+          answer: 1,
+          exp: "Subtract 5 from both sides: \\(2x = 10\\). Divide by 2: \\(x = 5\\)."
+        },
+        {
+          q: "What is the hypotenuse of a right triangle with leg lengths 3 and 4?",
+          options: ["5", "6", "7", "25"],
+          answer: 0,
+          exp: "By Pythagorean theorem: \\(c = \\sqrt{3^2 + 4^2} = \\sqrt{9 + 16} = \\sqrt{25} = 5\\)."
+        },
+        {
+          q: "What is the derivative of \\( f(x) = x^2 \\)?",
+          options: ["\\( x \\)", "\\( 2x \\)", "\\( 2 \\)", "\\( x^3 \\)"],
+          answer: 1,
+          exp: "Using the power rule: \\(\\frac{d}{dx}[x^n] = n \\cdot x^{n-1}\\), so \\(\\frac{d}{dx}[x^2] = 2x\\)."
+        },
+        {
+          q: "What is the value of \\(\\sin(90^\\circ) \\)?",
+          options: ["0", "0.5", "1", "Undefined"],
+          answer: 2,
+          exp: "On the unit circle, the y-coordinate at 90 degrees is 1."
+        },
+        {
+          q: "Factor completely: \\( x^2 - 9 \\)",
+          options: ["\\((x-3)^2\\)", "\\((x+3)(x-3)\\)", "\\((x+9)(x-1)\\)", "\\(x(x-9)\\)"],
+          answer: 1,
+          exp: "This is a difference of squares: \\(a^2 - b^2 = (a+b)(a-b)\\)."
+        }
+      ],
+      general: [
+        {
+          q: "Which planet is known as the Red Planet?",
+          options: ["Venus", "Mars", "Jupiter", "Saturn"],
+          answer: 1,
+          exp: "Mars appears red due to iron oxide (rust) on its surface."
+        },
+        {
+          q: "How many sides does a regular octagon have?",
+          options: ["6", "7", "8", "10"],
+          answer: 2,
+          exp: "An octagon is an 8-sided polygon."
+        },
+        {
+          q: "What is the hardest natural substance on Earth?",
+          options: ["Gold", "Iron", "Diamond", "Quartz"],
+          answer: 2,
+          exp: "Diamond rates 10 on the Mohs hardness scale, making it the hardest natural substance."
+        },
+        {
+          q: "Who wrote the play 'Romeo and Juliet'?",
+          options: ["Charles Dickens", "William Shakespeare", "Mark Twain", "Jane Austen"],
+          answer: 1,
+          exp: "William Shakespeare wrote Romeo and Juliet early in his career."
+        },
+        {
+          q: "What is the capital city of Japan?",
+          options: ["Osaka", "Kyoto", "Tokyo", "Hiroshima"],
+          answer: 2,
+          exp: "Tokyo has been the capital of Japan since 1868."
+        }
+      ]
+    };
+
+    // --- APP STATE ---
+    let currentCategory = [];
+    let currentQIndex = 0;
+    let score = 0;
+    let timerInterval = null;
+    let timeLeft = 15;
+    const TIME_LIMIT = 15;
+
+    // --- DOM ELEMENTS ---
+    const screenCat = document.getElementById('screen-category');
+    const screenQuiz = document.getElementById('screen-quiz');
+    const screenResults = document.getElementById('screen-results');
+    const qProgress = document.getElementById('question-progress');
+    const scoreDisplay = document.getElementById('score-display');
+    const timerBar = document.getElementById('timer-bar');
+    const qText = document.getElementById('question-text');
+    const optionsBox = document.getElementById('options-container');
+    const expBox = document.getElementById('explanation-box');
+    const expText = document.getElementById('explanation-text');
+    const btnNext = document.getElementById('btn-next');
+
+    // --- AUDIO EFFECTS ---
+    class SoundFX {
+      constructor() { this.ctx = null; }
+      init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+      correct() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.frequency.setValueAtTime(523.25, this.ctx.currentTime); // C5
+        osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.1); // E5
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+      }
+      wrong() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(130, this.ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+      }
+    }
+    const sound = new SoundFX();
+
+    // --- NAVIGATION ---
+    function showCategories() {
+      screenCat.classList.add('active');
+      screenQuiz.classList.remove('active');
+      screenResults.classList.remove('active');
+    }
+
+    function startQuiz(categoryKey) {
+      sound.init();
+      currentCategory = quizData[categoryKey];
+      currentQIndex = 0;
+      score = 0;
+      scoreDisplay.textContent = `Score: ${score}`;
+      screenCat.classList.remove('active');
+      screenQuiz.classList.add('active');
+      loadQuestion();
+    }
+
+    // --- QUIZ LOGIC ---
+    function loadQuestion() {
+      clearInterval(timerInterval);
+      expBox.style.display = 'none';
+      btnNext.style.display = 'none';
+
+      const q = currentCategory[currentQIndex];
+      qProgress.textContent = `Question ${currentQIndex + 1}/${currentCategory.length}`;
+      qText.innerHTML = q.q;
+
+      optionsBox.innerHTML = '';
+      const prefixes = ['A', 'B', 'C', 'D'];
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerHTML = `<div class="option-prefix">${prefixes[idx]}</div><div>${opt}</div>`;
+        btn.onclick = () => handleAnswer(idx);
+        optionsBox.appendChild(btn);
+      });
+
+      // Render math equations if MathJax is available
+      if (window.MathJax) {
+        MathJax.typesetPromise();
+      }
+
+      startTimer();
+    }
+
+    function startTimer() {
+      timeLeft = TIME_LIMIT;
+      timerBar.style.width = '100%';
+      timerBar.style.backgroundColor = 'var(--accent-green)';
+
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        const pct = (timeLeft / TIME_LIMIT) * 100;
+        timerBar.style.width = `${pct}%`;
+
+        if (timeLeft <= 5) {
+          timerBar.style.backgroundColor = 'var(--accent-red)';
+        } else if (timeLeft <= 9) {
+          timerBar.style.backgroundColor = 'var(--accent-gold)';
+        }
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          handleAnswer(-1); // Timeout
+        }
+      }, 1000);
+    }
+
+    function handleAnswer(selectedIdx) {
+      clearInterval(timerInterval);
+      const q = currentCategory[currentQIndex];
+      const buttons = optionsBox.querySelectorAll('.option-btn');
+
+      buttons.forEach(b => b.classList.add('disabled'));
+
+      if (selectedIdx === q.answer) {
+        sound.correct();
+        buttons[selectedIdx].classList.add('correct');
+        score += 10;
+        scoreDisplay.textContent = `Score: ${score}`;
+      } else {
+        sound.wrong();
+        if (selectedIdx >= 0) {
+          buttons[selectedIdx].classList.add('wrong');
+        }
+        buttons[q.answer].classList.add('correct');
+      }
+
+      expText.innerHTML = q.exp;
+      expBox.style.display = 'block';
+      btnNext.style.display = 'block';
+
+      if (window.MathJax) {
+        MathJax.typesetPromise();
+      }
+    }
+
+    function nextQuestion() {
+      currentQIndex++;
+      if (currentQIndex < currentCategory.length) {
+        loadQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      screenQuiz.classList.remove('active');
+      screenResults.classList.add('active');
+
+      document.getElementById('final-score').textContent = score;
+      document.getElementById('final-total').textContent = `out of ${currentCategory.length * 10}`;
+
+      const pct = score / (currentCategory.length * 10);
+      const msgElem = document.getElementById('result-message');
+
+      if (pct === 1) msgElem.textContent = "🏆 Perfect Score! Brilliant!";
+      else if (pct >= 0.7) msgElem.textContent = "🌟 Great Job! Keep it up!";
+      else if (pct >= 0.5) msgElem.textContent = "👍 Good Effort! Practice makes perfect.";
+      else msgElem.textContent = "📚 Don't give up! Try again to improve!";
+    }
+  </script>
+</body>
+</html>
