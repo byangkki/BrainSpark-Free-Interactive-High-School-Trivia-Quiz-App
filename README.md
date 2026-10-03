@@ -1,0 +1,2 @@
+# BrainSpark-Free-Interactive-High-School-Trivia-Quiz-App
+BrainSpark – Free Interactive High School Trivia Quiz App Test your knowledge with fun, fast-paced 15-second trivia games across General Science, Philippine History, High School Mathematics (Algebra &amp; Geometry), and General Knowledge. Features real-time timers, formula rendering, instant answer explanations, sound effects, and score tracking!
